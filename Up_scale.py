@@ -46,6 +46,7 @@ class UpScaler:
             direction_force_vector = self.original_frames[i][:, :2] - self.original_frames[i - 1][:, :2]
 
             for j in range(self.resolution_factor):
+
                 self.frames.append(
                     self.generate_frame(self.frames[-1], direction_force_vector)
                 )
@@ -133,18 +134,48 @@ class UpScaler:
                     f.write(str(int(self.frames[i][j, 2])) + ' ' + str(self.frames[i][j, 0]) + ' ' + str(
                         self.frames[i][j, 1]) + '\n')
 
+def parser(file_name: str):
+    """
+    This function parses the given file, and returns the information in it.
+    """
+    xyz_file = open(file_name + '.txt', 'r')
+    number_of_frames = int(xyz_file.readline())
+    frame_info = xyz_file.readline().split()
+    frame_width = int(frame_info[0])
+    frame_length = int(frame_info[1])
+    number_of_molecules = int(xyz_file.readline())
+
+    movie_info = np.array([number_of_frames, frame_width, frame_length, number_of_molecules]) # basic information
+    position_array = list() # molecules positions
+
+    for frame_index in range(number_of_frames):
+        frame = np.zeros(shape=(number_of_molecules, 3))
+        xyz_file.readline() # frame number
+        for molecule_index in range(number_of_molecules):
+            current_molecule = xyz_file.readline().split()
+
+            frame[molecule_index, 0] = float(current_molecule[1])
+            frame[molecule_index, 1] = float(current_molecule[2])
+            frame[molecule_index, 2] = float(current_molecule[0])
+
+        position_array.append(frame)
+
+    return movie_info, position_array
+
 
 if __name__ == '__main__':
-    parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
-                                      {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
-                                       (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
-                                       (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
-    generator = MovieGenerator(parameters, 1, 50, (30, 30, 30), (50, 50))
+    # parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
+    #                                   {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
+    #                                    (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
+    #                                    (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
+    # generator = MovieGenerator(parameters, 1, 50, (30, 30, 30), (50, 50))
+    #
+    # generator.generate()
+    # generator.save("test_res_original.txt")
 
-    generator.generate()
-    generator.save("test_res_original.txt")
+    movie_info, original_frames = parser("test_res_original")
+    number_of_frames, frame_width, frame_length, number_of_molecules = movie_info
 
-    frames_to_generate = generator.frames
-    up_scaler = UpScaler(frames_to_generate, 10, 1, (50, 50))
+    up_scaler = UpScaler(original_frames, 10, 1, (frame_width, frame_length))
     up_scaler.up_scale()
     up_scaler.save("test_res_upscaled.txt")
