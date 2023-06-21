@@ -1,34 +1,150 @@
+from typing import List, Tuple
+
+import numpy as np
+
+import generator.dynamics as dynamics
+from generator.generator import ParticleType, SimulationParameters, MovieGenerator
+
 
 class UpScaler:
-    # constructor
-    def __init__(self,frames, frames_to_generate: int):
-        self.frames_to_generate = frames_to_generate
-        self.frames = frames
+    """
+    This class is responsible for up scaling a given movie.
 
-    def up_scale(self):
-        print (self.frames_to_generate)
+    :param frames: the frames of the original movie
+    :param resolution_factor: the factor by which to increase the resolution
+    :param delta_t: the time step of the original movie
+    :param frame_dimensions: the dimensions of the frames
+    """
+
+    def __init__(self, frames: List[np.ndarray], resolution_factor: int, delta_t: float,
+                 frame_dimensions: Tuple[float, float]):
+
+        self.original_frames = frames
+        self.resolution_factor = resolution_factor
+        self.delta_t = delta_t / self.resolution_factor
+        self.frame_dimensions = frame_dimensions  # TODO: fill using parser
+
+        # self.simulation_parameters = SimulationParameters({}, {})  # TODO: fill using learning (MSD, ...)
+        self.simulation_parameters = SimulationParameters(
+            {ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
+            {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
+             (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
+             (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
+
+        self.frames = [self.original_frames[0]]
+        self.rng = np.random.default_rng()  # TODO: seed?
+
+    def up_scale(self) -> None:
+        """
+        This method up scales the movie.
+        """
+
+        # loop over the frames, and add resolution_factor frames between each pair of frames
+        for i in range(1, len(self.original_frames)):
+
+            # a vector that points from the previous frame to the current frame
+            direction_force_vector = self.original_frames[i][:, :2] - self.original_frames[i - 1][:, :2]
+
+            for j in range(self.resolution_factor):
+                self.frames.append(
+                    self.generate_frame(self.frames[-1], direction_force_vector)
+                )
+
+                # every 5 frames, update the direction_force_vector
+                if j % 5 == 0:
+                    direction_force_vector = self.original_frames[i][:, :2] - self.frames[-1][:, :2]
+
+            self.frames.append(self.original_frames[i])
+
+    def generate_frame(self, frame: np.ndarray, direction_force_vector: np.ndarray):
+        """
+        This method generates a new frame, based on the previous frame and the direction_force_vector
+        """
+        # TODO: take into account the interaction between the particles
+
+        new_frame = np.zeros((frame.shape[0], 3))
+
+        for i in range(frame.shape[0]):
+            diffusion = (
+                self.simulation_parameters.D_TCR if frame[i, 2] == ParticleType.TCR
+                else self.simulation_parameters.D_DC45 if frame[i, 2] == ParticleType.CD45
+                else self.simulation_parameters.D_LCK
+            )
+
+            new_frame[i, :2] = self.keep_in_bounds(
+                frame[i, :2] + self.compute_position_change(direction_force_vector[i, :], diffusion))
+            new_frame[i, 2] = frame[i, 2]
+
+        return new_frame
+
+    def keep_in_bounds(self, location: np.ndarray):  # TODO: make static function in generator
+        """
+        This method keeps the given location in the bounds of the frame.
+        """
+        for i in range(2):
+            if location[i] < 0:
+                location[i] = -location[i]
+            elif location[i] > self.frame_dimensions[i]:
+                location[i] = 2 * self.frame_dimensions[i] - location[i]
+
+        return location
+
+    def compute_position_change(self, force: np.ndarray, diffusion: float):
+        """
+        This method computes the change in position of a particle, based on the given force and diffusion.
+        """
+
+        random_vector = self.rng.normal(0, 1, 2)
+        return self.delta_t * diffusion / dynamics.kT * force + np.sqrt(
+            2 * diffusion * self.delta_t) * random_vector  # TODO verify BD equation
 
     def learn_D(self):
-        for mol_type in ["CD45","LCK", "TCR"]:
-            #TODO: add func
+        for mol_type in ["CD45", "LCK", "TCR"]:
+            # TODO: add func
             pass
 
     def learn_r(self):
-        for couple in ["CD45_LCK","CD45_TCR","LCK_TCR"]:
-            #TODO: add func
+        for couple in ["CD45_LCK", "CD45_TCR", "LCK_TCR"]:
+            # TODO: add func
             pass
+
     def learn_k(self):
-        for couple in ["CD45_LCK","CD45_TCR","LCK_TCR"]:
-            #TODO: add func
+        for couple in ["CD45_LCK", "CD45_TCR", "LCK_TCR"]:
+            # TODO: add func
             pass
+
     def learn_drest(self):
-        for couple in ["CD45_LCK","CD45_TCR","LCK_TCR"]:
-            #TODO: add func
+        for couple in ["CD45_LCK", "CD45_TCR", "LCK_TCR"]:
+            # TODO: add func
             pass
+
+    def save(self, path: str):
+
+        with open(path, 'w') as f:
+            # write the header lines
+            f.write(str(len(self.frames)) + '\n')
+            f.write(str(self.frame_dimensions[0]) + ' ' + str(self.frame_dimensions[1]) + '\n')
+            f.write(str(self.frames[0].shape[0]) + '\n')
+
+            # write the frame lines
+            for i in range(len(self.frames)):
+                f.write(str(i) + '\n')
+                for j in range(self.frames[0].shape[0]):
+                    f.write(str(int(self.frames[i][j, 2])) + ' ' + str(self.frames[i][j, 0]) + ' ' + str(
+                        self.frames[i][j, 1]) + '\n')
 
 
 if __name__ == '__main__':
-    frames_to_generate = 10
-    up_scaler = UpScaler(frames_to_generate)
-    up_scaler.up_scale()
+    parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
+                                      {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
+                                       (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
+                                       (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
+    generator = MovieGenerator(parameters, 1, 50, (30, 30, 30), (50, 50))
 
+    generator.generate()
+    generator.save("test_res_original.txt")
+
+    frames_to_generate = generator.frames
+    up_scaler = UpScaler(frames_to_generate, 10, 1, (50, 50))
+    up_scaler.up_scale()
+    up_scaler.save("test_res_upscaled.txt")
