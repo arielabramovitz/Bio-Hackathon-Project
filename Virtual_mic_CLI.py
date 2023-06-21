@@ -41,8 +41,6 @@ if (tool_name not in all_tools):
 # else:
     
 
-#TODO: DELETE!!
-os.chdir("C:/Users/avish/Desktop")
 
 # read file and split by "\n"
 with open(input_file, 'r') as file:
