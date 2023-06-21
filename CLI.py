@@ -70,7 +70,7 @@ for i,arg in enumerate(args):
 dict =  {args_names[i]: args_values[i] for i in range(len(args_names))}
 
 
-needed_args = ['TCR_K', 'CD45_K', 'LCK_K',
+needed_args = ['TCR_D', 'CD45_D', 'LCK_D',
                          'TCR_CD45_R', 'TCR_LCK_R', 'CD45_LCK_R',
                          'TCR_CD45_DREST', 'TCR_LCK_DREST', 'CD45_LCK_DREST', 
                          'TCR_CD45_K', 'TCR_LCK_K', 'CD45_LCK_K',
