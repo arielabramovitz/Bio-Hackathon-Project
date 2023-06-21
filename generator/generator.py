@@ -113,20 +113,26 @@ class MovieGenerator:
             for j in range(self.number_of_particles[0], self.number_of_particles[0] + self.number_of_particles[1]):
                 # calculate the force
                 if self.simulation_parameters.DREST_TCR_DC45 < distances[i, j] < self.simulation_parameters.R_TCR_DC45:
-                    forces[i, :] += self.calculate_force(distances[i, j], self.simulation_parameters.DREST_TCR_DC45,
-                                                         self.simulation_parameters.K_TCR_DC45)
-                    forces[j, :] -= self.calculate_force(distances[i, j], self.simulation_parameters.DREST_TCR_DC45,
-                                                         self.simulation_parameters.K_TCR_DC45)
+                    d_vec = last_frame[i, :2] - last_frame[j, :2]
+                    force = self.calculate_force(
+                        distances[i, j], d_vec,
+                        self.simulation_parameters.DREST_TCR_DC45, self.simulation_parameters.K_TCR_DC45
+                    )
+                    forces[i, :] += force
+                    forces[j, :] -= force
 
             # calculate the forces from the LCK particles
             for j in range(self.number_of_particles[0] + self.number_of_particles[1],
                            self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
                 # calculate the force
                 if self.simulation_parameters.DREST_TCR_LCK < distances[i, j] < self.simulation_parameters.R_TCR_LCK:
-                    forces[i, :] += self.calculate_force(distances[i, j], self.simulation_parameters.DREST_TCR_LCK,
-                                                         self.simulation_parameters.K_TCR_LCK)
-                    forces[j, :] += self.calculate_force(distances[i, j], self.simulation_parameters.DREST_TCR_LCK,
-                                                         self.simulation_parameters.K_TCR_LCK)
+                    d_vec = last_frame[i, :2] - last_frame[j, :2]
+                    force = self.calculate_force(
+                        distances[i, j], d_vec,
+                        self.simulation_parameters.DREST_TCR_LCK, self.simulation_parameters.K_TCR_LCK
+                    )
+                    forces[i, :] += force
+                    forces[j, :] -= force
 
         # calculate the forces on the DC45 particles
         for i in range(self.number_of_particles[0], self.number_of_particles[0] + self.number_of_particles[1]):
@@ -135,38 +141,44 @@ class MovieGenerator:
                            self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
                 # calculate the force
                 if self.simulation_parameters.DREST_DC45_LCK < distances[i, j] < self.simulation_parameters.R_DC45_LCK:
-                    forces[i, :] += self.calculate_force(distances[i, j], self.simulation_parameters.DREST_DC45_LCK,
-                                                         self.simulation_parameters.R_DC45_LCK)
-                    forces[j, :] += self.calculate_force(distances[i, j], self.simulation_parameters.DREST_DC45_LCK,
-                                                         self.simulation_parameters.R_DC45_LCK)
+                    d_vec = last_frame[i, :2] - last_frame[j, :2]
+                    force = self.calculate_force(
+                        distances[i, j], d_vec,
+                        self.simulation_parameters.DREST_DC45_LCK, self.simulation_parameters.K_DC45_LCK
+                    )
+                    forces[i, :] += force
+                    forces[j, :] -= force
 
         # compute the new positions using brownian dynamics
         new_frame = np.zeros(
             (self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2], 3))
         for i in range(self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
-            new_frame[i, 0] = self.calculate_new_position(last_frame[i, 0], forces[i, 0])
-            new_frame[i, 1] = self.calculate_new_position(last_frame[i, 1], forces[i, 1])
+            diffusion = (
+                self.simulation_parameters.D_TCR if i < self.number_of_particles[0]
+                else self.simulation_parameters.D_DC45 if i < self.number_of_particles[0] + self.number_of_particles[1]
+                else self.simulation_parameters.D_LCK
+            )
+
+            new_frame[i, :2] = self.keep_in_bounds(
+                last_frame[i, :2] + self.compute_position_change(forces[i, :], diffusion))
             new_frame[i, 2] = last_frame[i, 2]
 
         return new_frame
 
     # calculate the new position of a particle using brownian dynamics
-    def calculate_new_position(self, force: float, diffusion: float) -> float:
+    def compute_position_change(self, force: np.ndarray, diffusion: float) -> float:
 
         # TODO: boundaries
 
-        R = self.rng.normal(0, 1, 2)
-        dx = self.delta_t * diffusion / dynamics.kT * force + np.sqrt(
-            2 * diffusion * self.delta_t) * R  # TODO verify BD equation
-        return dx
+        random_vector = self.rng.normal(0, 1, 2)
+        return self.delta_t * diffusion / dynamics.kT * force + np.sqrt(
+            2 * diffusion * self.delta_t) * random_vector  # TODO verify BD equation
 
     # calculate the force between two particles
     def calculate_force(self, distance: float, d_vec: np.ndarray, r0: float, k: float) -> np.ndarray:
-        F_magnitude = dynamics.harmonic_potential_derivative(distance, r0, k)
+        f_magnitude = dynamics.harmonic_potential_derivative(distance, r0, k)
 
-        F = -F_magnitude * d_vec / distance
-
-        return F
+        return -f_magnitude * d_vec / distance
 
     def init_simulation(self):
         # initialize the first frame
@@ -194,12 +206,21 @@ class MovieGenerator:
         frame[self.number_of_particles[0] + self.number_of_particles[1]:, 2] = ParticleType.LCK
         self.frames.append(frame)
 
+    def keep_in_bounds(self, location: np.ndarray) -> np.ndarray:
+        for i in range(2):
+            if location[i] < 0:
+                location[i] = -location[i]
+            elif location[i] > self.frame_dimensions[i]:
+                location[i] = 2 * self.frame_dimensions[i] - location[i]
+
+        return location
+
 
 if __name__ == '__main__':
     parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.DC45: 0.2, ParticleType.TCR: 0.3},
-                                      {(ParticleType.LCK, ParticleType.DC45): (0.1, 0.2, 0.3),
-                                       (ParticleType.LCK, ParticleType.TCR): (0.4, 0.5, 0.6),
-                                       (ParticleType.DC45, ParticleType.TCR): (0.7, 0.8, 0.9)})
+                                      {(ParticleType.TCR, ParticleType.DC45): (0.1, 0.2, 0.3),
+                                       (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
+                                       (ParticleType.DC45, ParticleType.LCK): (0.7, 0.8, 0.9)})
     generator = MovieGenerator(parameters, 0.1, 100, (100, 100, 100), (100, 100))
 
     generator.generate()
