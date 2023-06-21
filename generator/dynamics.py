@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.ndimage as ndimage
 
-kT = 0.6  # Boltzmann constant kcal/mol at room temperature
+kT = 1.0  # Boltzmann constant kT at room temperature
 
 
 # General comments:
@@ -15,10 +15,10 @@ kT = 0.6  # Boltzmann constant kcal/mol at room temperature
 # interact via a harmonic potential. The particles are confined to a
 # 2D box of size 10x10. The particles are initialized at positions
 # (0,0) and (1,0). The particles have a diffusion coefficient of 1 um^2/s.
-# The harmonic potential is given by U = 0.5*k*(r-r0)^2, where k=1 kcal/mol/A^2
+# The harmonic potential is given by U = 0.5*k*(r-r0)^2, where k=1 kt/A^2
 def harmonic_potential(r, r0, k):
     '''
-    computes the harmonic potential where k=1 kT/A^2.
+    computes the harmonic potential where k=1 kt/A^2.
     @param r - the position of the particle
     @param r0 - the equilibrium position of the particle (rest length)
     @param k - the spring constant
@@ -26,7 +26,7 @@ def harmonic_potential(r, r0, k):
     return 0.5 * k * (r - r0) ** 2
 
 
-def harmonic_potential_derivative(r, r0, k):
+def harmonic_potential_derivative(r, r0, k): # TODO: linear interpolation of the force towards the zero after half the way between drest and r
     '''
     computes the derivative of the harmonic potential where k=1 kT/A^2.
     @param r - the position of the particle
