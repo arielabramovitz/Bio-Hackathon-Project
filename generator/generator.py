@@ -3,13 +3,13 @@ This module contains the MovieGenerator class, which is responsible for generati
 """
 from typing import Tuple, Dict, List
 import numpy as np
-import dynamics
+import generator.dynamics as dynamics
 
 
 # enumerate the particle types - TCR, DC45, LCK
 class ParticleType:
     TCR = 1
-    DC45 = 2
+    CD45 = 2
     LCK = 3
 
 
@@ -22,20 +22,20 @@ class SimulationParameters:
     def __init__(self, d_coefficients: Dict[int, float],
                  interaction_coefficients: Dict[Tuple[int, int], Tuple[float, float, float]]):
         self.D_TCR = d_coefficients[ParticleType.TCR]
-        self.D_DC45 = d_coefficients[ParticleType.DC45]
+        self.D_DC45 = d_coefficients[ParticleType.CD45]
         self.D_LCK = d_coefficients[ParticleType.LCK]
 
-        self.R_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.DC45)][0]
+        self.R_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][0]
         self.R_TCR_LCK = interaction_coefficients[(ParticleType.TCR, ParticleType.LCK)][0]
-        self.R_DC45_LCK = interaction_coefficients[(ParticleType.DC45, ParticleType.LCK)][0]
+        self.R_DC45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][0]
 
-        self.DREST_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.DC45)][1]
+        self.DREST_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][1]
         self.DREST_TCR_LCK = interaction_coefficients[(ParticleType.TCR, ParticleType.LCK)][1]
-        self.DREST_DC45_LCK = interaction_coefficients[(ParticleType.DC45, ParticleType.LCK)][1]
+        self.DREST_DC45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][1]
 
-        self.K_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.DC45)][2]
+        self.K_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][2]
         self.K_TCR_LCK = interaction_coefficients[(ParticleType.TCR, ParticleType.LCK)][2]
-        self.K_DC45_LCK = interaction_coefficients[(ParticleType.DC45, ParticleType.LCK)][2]
+        self.K_DC45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][2]
 
 
 class MovieGenerator:
@@ -55,7 +55,7 @@ class MovieGenerator:
         self.number_of_particles = number_of_particles
         self.frame_dimensions = frame_dimensions
 
-        self.frames: List[np.ndarray] = []
+        self.frames: List[np.ndarray] = [] # TODO: cut precision to X digits after the decimal point?
 
         self.rng = np.random.default_rng()  # TODO: seed?
 
@@ -168,8 +168,6 @@ class MovieGenerator:
     # calculate the new position of a particle using brownian dynamics
     def compute_position_change(self, force: np.ndarray, diffusion: float) -> float:
 
-        # TODO: boundaries
-
         random_vector = self.rng.normal(0, 1, 2)
         return self.delta_t * diffusion / dynamics.kT * force + np.sqrt(
             2 * diffusion * self.delta_t) * random_vector  # TODO verify BD equation
@@ -196,7 +194,7 @@ class MovieGenerator:
         frame[self.number_of_particles[0]:self.number_of_particles[0] + self.number_of_particles[1], 1] = \
             np.random.uniform(0, self.frame_dimensions[1], self.number_of_particles[1])
         frame[self.number_of_particles[0]:self.number_of_particles[0] + self.number_of_particles[1],
-        2] = ParticleType.DC45
+        2] = ParticleType.CD45
 
         # generate the LCK particles
         frame[self.number_of_particles[0] + self.number_of_particles[1]:, 0] = \
@@ -217,10 +215,10 @@ class MovieGenerator:
 
 
 if __name__ == '__main__':
-    parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.DC45: 0.2, ParticleType.TCR: 0.3},
-                                      {(ParticleType.TCR, ParticleType.DC45): (0.1, 0.2, 0.3),
+    parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
+                                      {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
                                        (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
-                                       (ParticleType.DC45, ParticleType.LCK): (0.7, 0.8, 0.9)})
+                                       (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
     generator = MovieGenerator(parameters, 0.1, 100, (100, 100, 100), (100, 100))
 
     generator.generate()
