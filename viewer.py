@@ -63,7 +63,7 @@ def viewer(movie_txt_path):
        <div class="Bar-container"><input type="range" id="Frame-bar" class="slider" value=0 /></div>
        <input type="text" id="Frame" placeholder="Frame" /><br />
        <span>FPS:<input type="text" id="Speed" value=20 /> 
-       Particle Size:<input type="text" id="Size" value=3 /><br /></span><br />
+       Particle Size:<input type="text" id="Size" value=7 /><br /></span><br />
     </div>
     """
 

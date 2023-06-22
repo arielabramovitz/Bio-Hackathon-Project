@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, render_template
 from flask_cors import CORS, cross_origin
 import subprocess as sb
 from datetime import datetime as dt
@@ -6,7 +6,6 @@ import os
 import json
 
 app = Flask(__name__)
-
 
 @app.route('/api', methods=['POST'])
 def post():
@@ -17,21 +16,19 @@ def post():
         form_type = request.form["type"]
         
         if form_type == "upscaler":
+            print(request.form)
             scale_amount = request.form["scaleAmount"]
             coordinates = request.files["coordinateFile"]
             time = dt.now().strftime("%d-%m-%Y_%H:%M:%S")
             coordinates_name = f"coordinates_{time}.txt"
             coordinates.save(coordinates_name)
-
-
             
             result = sb.run(["python3", "../virtual_microscope.py", "upres", coordinates_name, "out_file.txt", scale_amount])
-            # todo: async calls with subproccess.Popen? or raw with exec
             if result.returncode == 0:
-                result = sb.run(["python3", "../virtual_microscope.py", "viewer", "out_file.txt"])
+                result = sb.run(["python3", "../virtual_microscope.py", "viewer", "out_file.txt", "3d"])
                 
-                if os.path.isfile("../test.html"):
-                    with open("../test.html", "r") as html:
+                if os.path.isfile("viewer.html"):
+                    with open("viewer.html", "r") as html:
                         text = "".join(html.readlines())
                         response.data = json.dumps({"html": text})
                         response.content_type = "application/json"
@@ -47,15 +44,31 @@ def post():
 
             result = sb.run(["python3", "../virtual_microscope.py", "generator", config_name])
             if result.returncode == 0:
-                pass
-            # async call the generator
-            
-            # should call the viewer?
+                result = sb.run(["python3", "../virtual_microscope.py", "viewer", "out_file.txt", "3d"])
+                if os.path.isfile("viewer.html"):
+                    with open("viewer.html", "r") as html:
+                        text = "".join(html.readlines())
+                        response.data = json.dumps({"html": text})
+                        response.content_type = "application/json"
+                        
+                    os.remove(config_name)
+
             
         elif form_type == "viewer":
             coordinates = request.files["coordinateFile"]
+            time = dt.now().strftime("%d-%m-%Y_%H:%M:%S")
+            coordinates_name = f"coordinates_{time}.txt"
+            coordinates.save(coordinates_name)
+            result = sb.run(["python3", "../virtual_microscope.py", "viewer", "out_file.txt", "3d"])
+                
+            if os.path.isfile("viewer.html"):
+                with open("viewer.html", "r") as html:
+                    text = "".join(html.readlines())
+                    response.data = json.dumps({"html": text})
+                    response.content_type = "application/json"
+                    
+                os.remove(coordinates_name)
             
-            # async call viewer
     except KeyError as e:
         response.status_code = 400
         return response

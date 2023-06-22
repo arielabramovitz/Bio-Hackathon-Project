@@ -1,17 +1,18 @@
 .App {
   text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .Card {
   
-  display: block;
+  /* display: block;
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; */
   width: 800px;
-  padding: 10px;
+  /* padding: 10px;
   -ms-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%); */
 }
 
 .UploadButton {
@@ -33,4 +34,10 @@
 
 .Title{
   margin-top: 32px;
+}
+
+.Graph {
+  display: block;
+  width: 800px;
+  height: 600px;
 }

@@ -24,7 +24,6 @@ function submitForm(form, setView) {
     axios.post("http://localhost:5000/api", form, cfg)
             .then((res)=>{
                 setView(res.data.html)
-                console.log(res)
             })
             .catch((e)=>{console.error(e)})
 }
@@ -46,7 +45,6 @@ function UpscalerForm({setView}) {
         bodyFormData.append('type', 'upscaler')
         bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
         bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
-        console.log(bodyFormData)
         submitForm(bodyFormData, setView)
     }
 
@@ -110,15 +108,9 @@ function GeneratorForm({setView}) {
     const handleSubmit = (e)=> {
         e.preventDefault()
         var bodyFormData = new FormData();
-        bodyFormData.append('type', 'upscaler')
-        bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
-        bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
-        console.log(bodyFormData)
-        axios.post("localhost:3000/", bodyFormData)
-            .then((res)=>{
-                setView(res.body.html)
-            })
-            .catch((e)=>{console.error(e)})
+        bodyFormData.append('type', 'generator')
+        bodyFormData.append('configFile', e.target.elements[0].files[0])
+        submitForm(bodyFormData, setView)
     }
     return (
         <form onSubmit={handleSubmit}>
@@ -169,15 +161,9 @@ function ViewerForm({setView}) {
     const handleSubmit = (e)=> {
         e.preventDefault()
         var bodyFormData = new FormData();
-        bodyFormData.append('type', 'upscaler')
+        bodyFormData.append('type', 'viewer')
         bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
-        bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
-        console.log(bodyFormData)
-        axios.post("localhost:3000/", bodyFormData)
-            .then((res)=>{
-                setView(res.data.html)
-            })
-            .catch((e)=>{console.error(e)})
+        submitForm(bodyFormData, setView)
     }
 
     return (
@@ -223,6 +209,7 @@ function App() {
     const handleChange = (e) => {
 
         setFormType(e.target.value)
+        setView(null)
     }
     
     const renderForm = (setView)=>{
@@ -269,10 +256,10 @@ function App() {
                 {renderForm(setView)}
                 </Card>
                 {view && (
-                    <div dangerouslySetInnerHTML={{ __html: view }}>
-
-                    </div>
+                    <iframe className="Graph" srcDoc={view}></iframe>
                 )}
+                
+                
             </Card>
         </div>
     );
