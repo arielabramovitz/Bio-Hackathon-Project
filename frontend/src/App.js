@@ -10,6 +10,9 @@ import {TextField, Typography} from "@mui/material/";
 import axios from "axios";
 import Card from '@mui/material/Card';
 import InputAdornment from '@mui/material/InputAdornment';
+import UpscalerForm from "./UpscalerForm.js"
+import GeneratorForm from "./GeneratorForm.js"
+import ViewerForm from "./ViewerForm.js"
 
 
 
@@ -28,192 +31,192 @@ function submitForm(form, setView) {
             .catch((e)=>{console.error(e)})
 }
 
-function UpscalerForm({setView}) {
+// function UpscalerForm({setView}) {
 
-    const [coorFileName, setCoorFileName] = useState("")
-    const [coorUploaded, setCoorUploaded] = useState(false)
+//     const [coorFileName, setCoorFileName] = useState("")
+//     const [coorUploaded, setCoorUploaded] = useState(false)
 
-    function handleUpload(e) {
-        setCoorUploaded(true)
-        setCoorFileName(e.target.files[0].name)
+//     function handleUpload(e) {
+//         setCoorUploaded(true)
+//         setCoorFileName(e.target.files[0].name)
         
-    }
+//     }
 
-    const handleSubmit = (e)=> {
-        e.preventDefault()
-        var bodyFormData = new FormData();
-        bodyFormData.append('type', 'upscaler')
-        bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
-        bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
-        console.log(bodyFormData)
-        submitForm(bodyFormData, setView)
-    }
+//     const handleSubmit = (e)=> {
+//         e.preventDefault()
+//         var bodyFormData = new FormData();
+//         bodyFormData.append('type', 'upscaler')
+//         bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
+//         bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
+//         console.log(bodyFormData)
+//         submitForm(bodyFormData, setView)
+//     }
 
-    return (
-        <form onSubmit={handleSubmit}>
-            <div className="UploadButton">
-                <Button
-                    variant="contained"
-                    component="label"
-                    >
-                    Upload Coordinates
-                    <input
-                        type="file"
-                        hidden
-                        onChange={handleUpload}
-                    />
-                </Button>
-                {coorUploaded && (
-                    <TextField
-                    id="outlined-basic"
-                    label="File Name"
-                    variant="outlined"
-                    value={coorFileName}
-                    disabled
-                    />
-                    )}
-            </div>
-            <div>
-            <TextField
-                label="Scale Amount"
-                id="scaleAmount"
-                sx={{ m: 1, width: '25ch' }}
-                InputProps={{
-                    startAdornment: <InputAdornment position="start">X</InputAdornment>,
-                }}
-                />
-            </div>
-            <div className='SubmitButton'>
-                <Button type="submit" variant='contained'>
-                    Submit
-                </Button>
-            </div>
-        </form>
-    )
-}
+//     return (
+//         <form onSubmit={handleSubmit}>
+//             <div className="UploadButton">
+//                 <Button
+//                     variant="contained"
+//                     component="label"
+//                     >
+//                     Upload Coordinates
+//                     <input
+//                         type="file"
+//                         hidden
+//                         onChange={handleUpload}
+//                     />
+//                 </Button>
+//                 {coorUploaded && (
+//                     <TextField
+//                     id="outlined-basic"
+//                     label="File Name"
+//                     variant="outlined"
+//                     value={coorFileName}
+//                     disabled
+//                     />
+//                     )}
+//             </div>
+//             <div>
+//             <TextField
+//                 label="Scale Amount"
+//                 id="scaleAmount"
+//                 sx={{ m: 1, width: '25ch' }}
+//                 InputProps={{
+//                     startAdornment: <InputAdornment position="start">X</InputAdornment>,
+//                 }}
+//                 />
+//             </div>
+//             <div className='SubmitButton'>
+//                 <Button type="submit" variant='contained'>
+//                     Submit
+//                 </Button>
+//             </div>
+//         </form>
+//     )
+// }
 
-function GeneratorForm({setView}) {
-    const [configFileName, setConfigFileName] = useState("")
-    const [configUploaded, setConfigUploaded] = useState(false)
+// function GeneratorForm({setView}) {
+//     const [configFileName, setConfigFileName] = useState("")
+//     const [configUploaded, setConfigUploaded] = useState(false)
 
-    function handleUpload(e) {
+//     function handleUpload(e) {
 
         
-        setConfigUploaded(true)
-        setConfigFileName(e.target.files[0].name)
+//         setConfigUploaded(true)
+//         setConfigFileName(e.target.files[0].name)
         
-    }
+//     }
 
     
     
-    const handleSubmit = (e)=> {
-        e.preventDefault()
-        var bodyFormData = new FormData();
-        bodyFormData.append('type', 'upscaler')
-        bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
-        bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
-        console.log(bodyFormData)
-        axios.post("localhost:3000/", bodyFormData)
-            .then((res)=>{
-                setView(res.body.html)
-            })
-            .catch((e)=>{console.error(e)})
-    }
-    return (
-        <form onSubmit={handleSubmit}>
-            <div className="UploadButton">
-                <Button
-                    variant="contained"
-                    component="label"
-                    >
-                    Upload Configuration
-                    <input
-                        type="file"
-                        hidden
-                        onChange={handleUpload}
-                    />
-                </Button>
-                {
-                    configUploaded && (
-                        <TextField
-                        id="outlined-basic"
-                        label="File Name"
-                        variant="outlined"
-                        value={configFileName}
-                        disabled
-                        />
-                    )
-                    }
-            </div>
-            <div className='SubmitButton'>
-                <Button type="submit" variant='contained'>
-                    Submit
-                </Button>
-            </div>
-        </form>
-    )
-}
+//     const handleSubmit = (e)=> {
+//         e.preventDefault()
+//         var bodyFormData = new FormData();
+//         bodyFormData.append('type', 'upscaler')
+//         bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
+//         bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
+//         console.log(bodyFormData)
+//         axios.post("localhost:3000/", bodyFormData)
+//             .then((res)=>{
+//                 setView(res.body.html)
+//             })
+//             .catch((e)=>{console.error(e)})
+//     }
+//     return (
+//         <form onSubmit={handleSubmit}>
+//             <div className="UploadButton">
+//                 <Button
+//                     variant="contained"
+//                     component="label"
+//                     >
+//                     Upload Configuration
+//                     <input
+//                         type="file"
+//                         hidden
+//                         onChange={handleUpload}
+//                     />
+//                 </Button>
+//                 {
+//                     configUploaded && (
+//                         <TextField
+//                         id="outlined-basic"
+//                         label="File Name"
+//                         variant="outlined"
+//                         value={configFileName}
+//                         disabled
+//                         />
+//                     )
+//                     }
+//             </div>
+//             <div className='SubmitButton'>
+//                 <Button type="submit" variant='contained'>
+//                     Submit
+//                 </Button>
+//             </div>
+//         </form>
+//     )
+// }
 
-function ViewerForm({setView}) {
-    const [coorFileName, setCoorFileName] = useState("")
-    const [coorUploaded, setCoorUploaded] = useState(false)
+// function ViewerForm({setView}) {
+//     const [coorFileName, setCoorFileName] = useState("")
+//     const [coorUploaded, setCoorUploaded] = useState(false)
 
-    function handleUpload(e) {
+//     function handleUpload(e) {
         
-        setCoorUploaded(true)
-        setCoorFileName(e.target.files[0].name)
+//         setCoorUploaded(true)
+//         setCoorFileName(e.target.files[0].name)
         
-    }
+//     }
 
-    const handleSubmit = (e)=> {
-        e.preventDefault()
-        var bodyFormData = new FormData();
-        bodyFormData.append('type', 'upscaler')
-        bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
-        bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
-        console.log(bodyFormData)
-        axios.post("localhost:3000/", bodyFormData)
-            .then((res)=>{
-                setView(res.body.html)
-            })
-            .catch((e)=>{console.error(e)})
-    }
+//     const handleSubmit = (e)=> {
+//         e.preventDefault()
+//         var bodyFormData = new FormData();
+//         bodyFormData.append('type', 'upscaler')
+//         bodyFormData.append('coordinateFile', e.target.elements[0].files[0])
+//         bodyFormData.append('scaleAmount', e.target.scaleAmount.value)
+//         console.log(bodyFormData)
+//         axios.post("localhost:3000/", bodyFormData)
+//             .then((res)=>{
+//                 setView(res.body.html)
+//             })
+//             .catch((e)=>{console.error(e)})
+//     }
 
-    return (
-        <form onSubmit={handleSubmit}>
+//     return (
+//         <form onSubmit={handleSubmit}>
             
-            <div className="UploadButton">
-                <Button
-                    variant="contained"
-                    component="label"
-                    >
-                    Upload Coordinates
-                    <input
-                        type="file"
-                        hidden
-                        onChange={(e)=>handleUpload(e)}
-                    />
-                </Button>
-                {coorUploaded && (
-                    <TextField
-                    id="outlined-basic"
-                    label="File Name"
-                    variant="outlined"
-                    value={coorFileName}
-                    disabled
-                    />
-                    )}
-            </div>
+//             <div className="UploadButton">
+//                 <Button
+//                     variant="contained"
+//                     component="label"
+//                     >
+//                     Upload Coordinates
+//                     <input
+//                         type="file"
+//                         hidden
+//                         onChange={(e)=>handleUpload(e)}
+//                     />
+//                 </Button>
+//                 {coorUploaded && (
+//                     <TextField
+//                     id="outlined-basic"
+//                     label="File Name"
+//                     variant="outlined"
+//                     value={coorFileName}
+//                     disabled
+//                     />
+//                     )}
+//             </div>
             
-            <div className='SubmitButton'>
-                <Button type="submit" variant='contained'>
-                    Submit
-                </Button>
-            </div>
-        </form>
-    )
+//             <div className='SubmitButton'>
+//                 <Button type="submit" variant='contained'>
+//                     Submit
+//                 </Button>
+//             </div>
+//         </form>
+//     )
 
-}
+// }
 
 function App() {
     const [view, setView] = useState()
@@ -228,13 +231,13 @@ function App() {
         
             switch (formType) {
                 case 'upscaler':
-                    return <UpscalerForm setView={setView}/>;
+                    return <UpscalerForm setView={setView} submitForm={submitForm}/>;
                 case 'generator':
-                    return <GeneratorForm setView={setView}/>;
+                    return <GeneratorForm setView={setView} submitForm={submitForm}/>;
                 case 'viewer':
-                    return <ViewerForm setView={setView}/>;
+                    return <ViewerForm setView={setView} submitForm={submitForm}/>;
                 default:
-                    return <UpscalerForm setView={setView}/>;
+                    return <UpscalerForm setView={setView} submitForm={submitForm}/>;
             }
     }
 
