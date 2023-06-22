@@ -7,6 +7,7 @@ Created on Wed Jun 21 10:12:28 2023
 import argparse
 import sys
 
+import generator
 import up_scale
 
 
@@ -14,7 +15,9 @@ import up_scale
 
 
 def run_generator(config_file: str, output_file: str):
-    pass
+    movies_generator = generator.parse(config_file)
+    movies_generator.generate()
+    movies_generator.save(output_file)
 
 
 def run_up_res(input_file: str, output_file: str, resolution_factor: int = 10) -> None:
