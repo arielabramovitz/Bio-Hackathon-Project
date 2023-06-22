@@ -1,0 +1,36 @@
+.App {
+  text-align: center;
+}
+
+.Card {
+  
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 800px;
+  padding: 10px;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.UploadButton {
+
+  margin: 32px 0px 32px 0px;
+}
+
+.SubmitButton {
+  margin: 64px 0px 8px 0px;
+
+}
+
+.FormControl {
+  margin-bottom: 32px;
+  margin-left: 8px;
+  margin-right: 8px;
+  padding: 10px;
+}
+
+.Title{
+  margin-top: 32px;
+}
