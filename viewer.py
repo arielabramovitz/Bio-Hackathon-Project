@@ -12,9 +12,6 @@ def viewer(movie_txt_path):
     minYRange = 0.0
     #
 
-    if os.path.exists(movie_txt_path):
-        # Remove the file
-        os.remove(movie_txt_path)
     f = open(html_file_name, "w+")
     HTMLBefore = """<!DOCTYPE html>
     <html>
@@ -222,11 +219,11 @@ def viewer(movie_txt_path):
     f.write(JScript + "\n")
     f.write(data_prefix)
 
-    xyz_file = open(movie_txt_path + '.txt', 'r')
+    xyz_file = open(movie_txt_path, 'r')
     number_of_frames = int(xyz_file.readline())
     frame_info = xyz_file.readline().split()
-    frame_width = int(frame_info[0])
-    frame_length = int(frame_info[1])
+    frame_width = int(float(frame_info[0]))
+    frame_length = int(float(frame_info[1]))
     number_of_molecules = int(xyz_file.readline())
 
     # parse data from input file into an array called Data in html:
@@ -288,9 +285,6 @@ def viewer_3d(movie_txt_path):
     minZRange = 0.0
     #
 
-    if os.path.exists(movie_txt_path):
-        # Remove the file
-        os.remove(movie_txt_path)
     f = open(html_file_name, "w+")
     HTMLBefore = """<!DOCTYPE html>
     <html>
@@ -505,11 +499,11 @@ def viewer_3d(movie_txt_path):
     f.write(JScript + "\n")
     f.write(data_prefix)
 
-    xyz_file = open(movie_txt_path + '.txt', 'r')
+    xyz_file = open(movie_txt_path, 'r')
     number_of_frames = int(xyz_file.readline())
     frame_info = xyz_file.readline().split()
-    frame_width = int(frame_info[0])
-    frame_length = int(frame_info[1])
+    frame_width = int(float(frame_info[0]))
+    frame_length = int(float(frame_info[1]))
     number_of_molecules = int(xyz_file.readline())
 
     # parse data from input file into an array called Data in html:
