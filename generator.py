@@ -3,7 +3,9 @@ This module contains the MovieGenerator class, which is responsible for generati
 """
 import json
 from typing import Tuple, Dict, List
+
 import numpy as np
+
 import dynamics as dynamics
 
 
@@ -56,7 +58,7 @@ class MovieGenerator:
         self.number_of_particles = number_of_particles
         self.frame_dimensions = frame_dimensions
 
-        self.frames: List[np.ndarray] = [] # TODO: cut precision to X digits after the decimal point?
+        self.frames: List[np.ndarray] = []  # TODO: cut precision to X digits after the decimal point?
 
         self.rng = np.random.default_rng()  # TODO: seed?
 
@@ -219,15 +221,32 @@ def parse(config_file: str):
     with open(config_file, 'r') as f:
         config = json.load(f)
 
-    return SimulationParameters(config['initial_concentrations'], config['interaction_parameters'])
+    d_coefficients = {ParticleType.TCR: config["D_TCR"],
+                      ParticleType.CD45: config["D_CD45"],
+                      ParticleType.LCK: config["D_LCK"]}
+
+    interaction_parameters = {(ParticleType.TCR, ParticleType.CD45):
+                                  (config["TCR_CD45"]["R"], config["TCR_CD45"]["DREST"], config["TCR_CD45"]["K"]),
+                              (ParticleType.TCR, ParticleType.LCK):
+                                  (config["TCR_LCK"]["R"], config["TCR_LCK"]["DREST"], config["TCR_LCK"]["K"]),
+                              (ParticleType.CD45, ParticleType.LCK):
+                                  (config["CD45_LCK"]["R"], config["CD45_LCK"]["DREST"], config["CD45_LCK"]["K"])}
+    parameters = SimulationParameters(d_coefficients, interaction_parameters)
+    generator = MovieGenerator(parameters, config["delta_t"], config["number_of_frames"],
+                               (config["TCR_count"], config["CD45_count"], config["LCK_count"]),
+                               (config["frame_width"], config["frame_length"]))
+
+    return generator
+
 
 if __name__ == '__main__':
-    parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
-                                      {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
-                                       (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
-                                       (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
-    generator = MovieGenerator(parameters, 1, 50, (10, 10, 10), (30, 30))
+    # parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
+    #                                   {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
+    #                                    (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
+    #                                    (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
+    # generator = MovieGenerator(parameters, 1, 50, (10, 10, 10), (30, 30))
+    generator = parse('config.json')
 
     generator.generate()
 
-    generator.save('test.txt')
+    generator.save('test1.txt')
