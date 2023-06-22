@@ -3,7 +3,7 @@ from typing import List, Tuple
 import numpy as np
 
 import generator.dynamics as dynamics
-from generator.generator import ParticleType, SimulationParameters, MovieGenerator
+from generator.generator import ParticleType, SimulationParameters
 
 
 class UpScaler:
@@ -34,6 +34,11 @@ class UpScaler:
         self.frames = [self.original_frames[0]]
         self.rng = np.random.default_rng()  # TODO: seed?
 
+        # calculate the number of particles of each type
+        self.number_of_particles = np.zeros(3, dtype=int)
+        for i in range(self.frames[0].shape[0]):
+            self.number_of_particles[int(self.frames[0][i, 2]) - 1] += 1
+
     def up_scale(self) -> None:
         """
         This method up scales the movie.
@@ -62,6 +67,7 @@ class UpScaler:
         This method generates a new frame, based on the previous frame and the direction_force_vector
         """
         # TODO: take into account the interaction between the particles
+        force = direction_force_vector + self.calculate_interaction_force(frame)
 
         new_frame = np.zeros((frame.shape[0], 3))
 
@@ -73,10 +79,76 @@ class UpScaler:
             )
 
             new_frame[i, :2] = self.keep_in_bounds(
-                frame[i, :2] + self.compute_position_change(direction_force_vector[i, :], diffusion))
+                frame[i, :2] + self.compute_position_change(force[i, :], diffusion))
             new_frame[i, 2] = frame[i, 2]
 
         return new_frame
+
+    def calculate_interaction_force(self, frame: np.ndarray) -> np.ndarray:
+        """
+        This method calculates the interaction force between the particles in the given frame.
+        """
+        # calculate distances between all particles
+        distances = np.zeros((frame.shape[0], frame.shape[0]))
+        for i in range(frame.shape[0]):
+            for j in range(i + 1, frame.shape[0]):
+                distances[i, j] = np.linalg.norm(frame[i, :2] - frame[j, :2])
+                distances[j, i] = distances[i, j]
+
+        # calculate the forces on each particle
+        forces = np.zeros((frame.shape[0], 2))
+
+        # calculate the forces on the TCR particles
+        for i in range(self.number_of_particles[0]):
+            # calculate the forces from the DC45 particles
+            for j in range(self.number_of_particles[0], self.number_of_particles[0] + self.number_of_particles[1]):
+                # calculate the force
+                if self.simulation_parameters.DREST_TCR_DC45 < distances[i, j] < self.simulation_parameters.R_TCR_DC45:
+                    d_vec = frame[i, :2] - frame[j, :2]
+                    force = self.calculate_force(
+                        distances[i, j], d_vec,
+                        self.simulation_parameters.DREST_TCR_DC45, self.simulation_parameters.K_TCR_DC45
+                    )
+                    forces[i, :] += force
+                    forces[j, :] -= force
+
+            # calculate the forces from the LCK particles
+            for j in range(self.number_of_particles[0] + self.number_of_particles[1],
+                           self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
+                # calculate the force
+                if self.simulation_parameters.DREST_TCR_LCK < distances[i, j] < self.simulation_parameters.R_TCR_LCK:
+                    d_vec = frame[i, :2] - frame[j, :2]
+                    force = self.calculate_force(
+                        distances[i, j], d_vec,
+                        self.simulation_parameters.DREST_TCR_LCK, self.simulation_parameters.K_TCR_LCK
+                    )
+                    forces[i, :] += force
+                    forces[j, :] -= force
+
+        # calculate the forces on the DC45 particles
+        for i in range(self.number_of_particles[0], self.number_of_particles[0] + self.number_of_particles[1]):
+            # calculate the forces from the LCK particles
+            for j in range(self.number_of_particles[0] + self.number_of_particles[1],
+                           self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
+                # calculate the force
+                if self.simulation_parameters.DREST_DC45_LCK < distances[i, j] < self.simulation_parameters.R_DC45_LCK:
+                    d_vec = frame[i, :2] - frame[j, :2]
+                    force = self.calculate_force(
+                        distances[i, j], d_vec,
+                        self.simulation_parameters.DREST_DC45_LCK, self.simulation_parameters.K_DC45_LCK
+                    )
+                    forces[i, :] += force
+                    forces[j, :] -= force
+
+        return forces
+
+    def calculate_force(self, distance: float, d_vec: np.ndarray, r0: float, k: float) -> np.ndarray:
+        """
+        This method calculates the force between two particles, based on the given distance, d_vec, d_rest and k.
+        """
+        f_magnitude = dynamics.harmonic_potential_derivative(distance, r0, k)
+
+        return -f_magnitude * d_vec / distance
 
     def keep_in_bounds(self, location: np.ndarray):  # TODO: make static function in generator
         """
@@ -134,6 +206,7 @@ class UpScaler:
                     f.write(str(int(self.frames[i][j, 2])) + ' ' + str(self.frames[i][j, 0]) + ' ' + str(
                         self.frames[i][j, 1]) + '\n')
 
+
 def parser(file_name: str):
     """
     This function parses the given file, and returns the information in it.
@@ -145,12 +218,12 @@ def parser(file_name: str):
     frame_length = int(frame_info[1])
     number_of_molecules = int(xyz_file.readline())
 
-    movie_info = np.array([number_of_frames, frame_width, frame_length, number_of_molecules]) # basic information
-    position_array = list() # molecules positions
+    movie_info = np.array([number_of_frames, frame_width, frame_length, number_of_molecules])  # basic information
+    position_array = list()  # molecules positions
 
     for frame_index in range(number_of_frames):
         frame = np.zeros(shape=(number_of_molecules, 3))
-        xyz_file.readline() # frame number
+        xyz_file.readline()  # frame number
         for molecule_index in range(number_of_molecules):
             current_molecule = xyz_file.readline().split()
 
