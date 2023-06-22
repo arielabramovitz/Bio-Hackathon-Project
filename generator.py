@@ -1,9 +1,10 @@
 """
 This module contains the MovieGenerator class, which is responsible for generating a sequence of frames, simulating molecular dynamics
 """
+import json
 from typing import Tuple, Dict, List
 import numpy as np
-import generator.dynamics as dynamics
+import dynamics as dynamics
 
 
 # enumerate the particle types - TCR, DC45, LCK
@@ -214,15 +215,19 @@ class MovieGenerator:
         return location
 
 
+def parse(config_file: str):
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+
+    return SimulationParameters(config['initial_concentrations'], config['interaction_parameters'])
+
 if __name__ == '__main__':
     parameters = SimulationParameters({ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
                                       {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
                                        (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
                                        (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
-    generator = MovieGenerator(parameters, 0.1, 100, (100, 100, 100), (100, 100))
+    generator = MovieGenerator(parameters, 1, 50, (10, 10, 10), (30, 30))
 
     generator.generate()
-
-    print(generator.frames[0])
 
     generator.save('test.txt')

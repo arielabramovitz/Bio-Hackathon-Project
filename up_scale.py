@@ -2,8 +2,8 @@ from typing import List, Tuple
 
 import numpy as np
 
-import generator.dynamics as dynamics
-from generator.generator import ParticleType, SimulationParameters
+import dynamics
+import generator
 
 
 class UpScaler:
@@ -25,11 +25,11 @@ class UpScaler:
         self.frame_dimensions = frame_dimensions  # TODO: fill using parser
 
         # self.simulation_parameters = SimulationParameters({}, {})  # TODO: fill using learning (MSD, ...)
-        self.simulation_parameters = SimulationParameters(
-            {ParticleType.LCK: 0.1, ParticleType.CD45: 0.2, ParticleType.TCR: 0.3},
-            {(ParticleType.TCR, ParticleType.CD45): (0.1, 0.2, 0.3),
-             (ParticleType.TCR, ParticleType.LCK): (0.4, 0.5, 0.6),
-             (ParticleType.CD45, ParticleType.LCK): (0.7, 0.8, 0.9)})
+        self.simulation_parameters = generator.SimulationParameters(
+            {generator.ParticleType.LCK: 0.1, generator.ParticleType.CD45: 0.2, generator.ParticleType.TCR: 0.3},
+            {(generator.ParticleType.TCR, generator.ParticleType.CD45): (0.1, 0.2, 0.3),
+             (generator.ParticleType.TCR, generator.ParticleType.LCK): (0.4, 0.5, 0.6),
+             (generator.ParticleType.CD45, generator.ParticleType.LCK): (0.7, 0.8, 0.9)})
 
         self.frames = [self.original_frames[0]]
         self.rng = np.random.default_rng()  # TODO: seed?
@@ -73,8 +73,8 @@ class UpScaler:
 
         for i in range(frame.shape[0]):
             diffusion = (
-                self.simulation_parameters.D_TCR if frame[i, 2] == ParticleType.TCR
-                else self.simulation_parameters.D_DC45 if frame[i, 2] == ParticleType.CD45
+                self.simulation_parameters.D_TCR if frame[i, 2] == generator.ParticleType.TCR
+                else self.simulation_parameters.D_DC45 if frame[i, 2] == generator.ParticleType.CD45
                 else self.simulation_parameters.D_LCK
             )
 
