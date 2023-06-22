@@ -23,7 +23,8 @@ function submitForm(form, setView) {
       }
     axios.post("http://localhost:5000/api", form, cfg)
             .then((res)=>{
-                setView(res.body.html)
+                setView(res.data.html)
+                console.log(res)
             })
             .catch((e)=>{console.error(e)})
 }
@@ -136,7 +137,7 @@ function GeneratorForm({setView}) {
                 {
                     configUploaded && (
                         <TextField
-                        id="outlined-basic"
+                        id="outlined-basic"body
                         label="File Name"
                         variant="outlined"
                         value={configFileName}
@@ -174,7 +175,7 @@ function ViewerForm({setView}) {
         console.log(bodyFormData)
         axios.post("localhost:3000/", bodyFormData)
             .then((res)=>{
-                setView(res.body.html)
+                setView(res.data.html)
             })
             .catch((e)=>{console.error(e)})
     }

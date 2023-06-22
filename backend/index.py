@@ -1,14 +1,12 @@
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, make_response
 from flask_cors import CORS, cross_origin
 import subprocess as sb
+from datetime import datetime as dt
+import os
+import json
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET'])
-def test():
-    response = make_response()
-    response.status_code = 200
-    return response
 
 @app.route('/api', methods=['POST'])
 def post():
@@ -21,23 +19,35 @@ def post():
         if form_type == "upscaler":
             scale_amount = request.form["scaleAmount"]
             coordinates = request.files["coordinateFile"]
-            coordinates.save("input_file.txt")
+            time = dt.now().strftime("%d-%m-%Y_%H:%M:%S")
+            coordinates_name = f"coordinates_{time}.txt"
+            coordinates.save(coordinates_name)
 
 
             
-            result = sb.run(["python3", "../virtual_microscope.py", "upres", "input_file.txt", "out_file.txt", scale_amount])
+            result = sb.run(["python3", "../virtual_microscope.py", "upres", coordinates_name, "out_file.txt", scale_amount])
             # todo: async calls with subproccess.Popen? or raw with exec
             if result.returncode == 0:
                 result = sb.run(["python3", "../virtual_microscope.py", "viewer", "out_file.txt"])
-            # async call the upscaler
-            
-            # async call the viewer with results of upscaler
-            
-            # parse generated html
+                
+                if os.path.isfile("../test.html"):
+                    with open("../test.html", "r") as html:
+                        text = "".join(html.readlines())
+                        response.data = json.dumps({"html": text})
+                        response.content_type = "application/json"
+                        
+                    os.remove(coordinates_name)
+                        
             
         elif form_type == "generator":
             config = request.files["configFile"]
-            
+            time = dt.now().strftime("%d-%m-%Y_%H:%M:%S")
+            config_name = f"config_{time}"
+            config.save(config_name)
+
+            result = sb.run(["python3", "../virtual_microscope.py", "generator", config_name])
+            if result.returncode == 0:
+                pass
             # async call the generator
             
             # should call the viewer?
