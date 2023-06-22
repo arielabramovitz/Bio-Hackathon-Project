@@ -207,11 +207,15 @@ class UpScaler:
                         self.frames[i][j, 1]) + '\n')
 
 
-def parser(file_name: str):
+def parse(file_name: str) -> Tuple[np.ndarray, List[np.ndarray]]:
     """
     This function parses the given file, and returns the information in it.
+
+    :return: a tuple containing the basic information and the positions array
+    the basic information is a numpy array containing the number of frames, the frame width, the frame length and the
+    number of molecules
     """
-    xyz_file = open(file_name + '.txt', 'r')
+    xyz_file = open(file_name, 'r')
     number_of_frames = int(xyz_file.readline())
     frame_info = xyz_file.readline().split()
     frame_width = int(frame_info[0])
@@ -246,7 +250,7 @@ if __name__ == '__main__':
     # generator.generate()
     # generator.save("test_res_original.txt")
 
-    movie_info, original_frames = parser("test_res_original")
+    movie_info, original_frames = parse("test_res_original")
     number_of_frames, frame_width, frame_length, number_of_molecules = movie_info
 
     up_scaler = UpScaler(original_frames, 10, 1, (frame_width, frame_length))
