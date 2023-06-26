@@ -1,5 +1,7 @@
+import math
 from typing import List, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 import dynamics
@@ -24,7 +26,6 @@ class UpScaler:
         self.delta_t = delta_t / self.resolution_factor
         self.frame_dimensions = frame_dimensions  # TODO: fill using parser
 
-        # self.simulation_parameters = SimulationParameters({}, {})  # TODO: fill using learning (MSD, ...)
         self.simulation_parameters = generator.SimulationParameters(
             {generator.ParticleType.TCR: 1, generator.ParticleType.CD45: 2, generator.ParticleType.LCK: 3},
             {(generator.ParticleType.TCR, generator.ParticleType.CD45): (1, 2, 3),
@@ -43,6 +44,9 @@ class UpScaler:
         """
         This method up scales the movie.
         """
+
+        # learn original parameters
+        self.learn_D(np.asarray(self.original_frames))
 
         # loop over the frames, and add resolution_factor frames between each pair of frames
         for i in range(1, len(self.original_frames)):
@@ -74,7 +78,7 @@ class UpScaler:
         for i in range(frame.shape[0]):
             diffusion = (
                 self.simulation_parameters.D_TCR if frame[i, 2] == generator.ParticleType.TCR
-                else self.simulation_parameters.D_DC45 if frame[i, 2] == generator.ParticleType.CD45
+                else self.simulation_parameters.D_CD45 if frame[i, 2] == generator.ParticleType.CD45
                 else self.simulation_parameters.D_LCK
             )
 
@@ -103,11 +107,11 @@ class UpScaler:
             # calculate the forces from the DC45 particles
             for j in range(self.number_of_particles[0], self.number_of_particles[0] + self.number_of_particles[1]):
                 # calculate the force
-                if self.simulation_parameters.DREST_TCR_DC45 < distances[i, j] < self.simulation_parameters.R_TCR_DC45:
+                if self.simulation_parameters.DREST_TCR_CD45 < distances[i, j] < self.simulation_parameters.R_TCR_CD45:
                     d_vec = frame[i, :2] - frame[j, :2]
                     force = self.calculate_force(
                         distances[i, j], d_vec,
-                        self.simulation_parameters.DREST_TCR_DC45, self.simulation_parameters.K_TCR_DC45
+                        self.simulation_parameters.DREST_TCR_CD45, self.simulation_parameters.K_TCR_CD45
                     )
                     forces[i, :] += force
                     forces[j, :] -= force
@@ -131,11 +135,11 @@ class UpScaler:
             for j in range(self.number_of_particles[0] + self.number_of_particles[1],
                            self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
                 # calculate the force
-                if self.simulation_parameters.DREST_DC45_LCK < distances[i, j] < self.simulation_parameters.R_DC45_LCK:
+                if self.simulation_parameters.DREST_CD45_LCK < distances[i, j] < self.simulation_parameters.R_CD45_LCK:
                     d_vec = frame[i, :2] - frame[j, :2]
                     force = self.calculate_force(
                         distances[i, j], d_vec,
-                        self.simulation_parameters.DREST_DC45_LCK, self.simulation_parameters.K_DC45_LCK
+                        self.simulation_parameters.DREST_CD45_LCK, self.simulation_parameters.K_CD45_LCK
                     )
                     forces[i, :] += force
                     forces[j, :] -= force
@@ -171,10 +175,96 @@ class UpScaler:
         return self.delta_t * diffusion / dynamics.kT * force + np.sqrt(
             2 * diffusion * self.delta_t) * random_vector  # TODO verify BD equation
 
-    def learn_D(self):
-        for mol_type in ["CD45", "LCK", "TCR"]:
-            # TODO: add func
-            pass
+    def learn_D(self, movie, percent_from_data=0.5, show_fig=False) -> None:
+        """
+
+        :param movie: the original frames to learn diffusion coefficients from
+        :param percent_from_data: percentage of the frames to learn from
+        :param show_fig: show MSD figures for each molecule type
+        """
+        num_of_frames = movie.shape[0]
+        num_of_molecules = movie.shape[1]
+        # List of all dT
+        all_delte_TCR = list()
+        all_delte_CD45 = list()
+        all_delte_LCK = list()
+
+        all_delta = list(range(1, num_of_frames - 1))
+        for delta in all_delta:
+            all_MSD_for_1_delta = []  # create a dict for all molecules in each delta
+            for molecule in range(0, num_of_molecules):
+                xdata = movie[:, molecule, 0:2][:, 0]  # for all frames in specific mol, get x
+                ydata = movie[:, molecule, 0:2][:, 1]  # for all frames in specific mol, get y
+
+                xdata = xdata[0:len(xdata):delta]  # take each delta element
+                ydata = ydata[0:len(ydata):delta]
+
+                diff = []  # calculate distance between two consecutive points
+                for i in range(len(xdata) - 1):
+                    diff.append(distance(xdata[i], ydata[i], xdata[i + 1], ydata[i + 1]))
+
+                diff_sq = np.array(diff) ** 2
+                MSD = np.mean(diff_sq)  # mean MSD of specific molecule (row) in specific delta T
+
+                all_MSD_for_1_delta.append(MSD)
+
+            TCR_rows = list(np.where(movie[0, :, 2] == 1))[0].tolist()  # get TCR rows
+            all_MSD_TCR = [all_MSD_for_1_delta[i] for i in TCR_rows]  # get all MSD for TCR
+            delta1_TCR = np.mean(all_MSD_TCR)
+            all_delte_TCR.append(delta1_TCR)  # append to dict of all delta T
+
+            CD45_rows = list(np.where(movie[0, :, 2] == 2))[0].tolist()
+            all_MSD_CD45 = [all_MSD_for_1_delta[i] for i in CD45_rows]
+            delta1_CD45 = np.mean(all_MSD_CD45)
+            all_delte_CD45.append(delta1_CD45)
+
+            LCK_rows = list(np.where(movie[0, :, 2] == 3))[0].tolist()
+            all_MSD_LCK = [all_MSD_for_1_delta[i] for i in LCK_rows]
+            delta1_LCK = np.mean(all_MSD_LCK)
+            all_delte_LCK.append(delta1_LCK)
+
+        fig, ax = plt.subplots()
+
+        X = range(1, len(all_delte_TCR) + 1)
+        X = np.array(X) * 0.001
+        y = np.array(all_delte_TCR)
+
+        if show_fig:
+            ax.plot(X, y, label='TCR')
+
+        frames_to_include = num_of_frames * percent_from_data
+        D_TCR = np.mean(y[1:frames_to_include] / (4 * X[1:frames_to_include]))
+
+        X = range(1, len(all_delte_CD45) + 1)
+        X = np.array(X) * 0.001
+        y = np.array(all_delte_CD45)
+
+        if show_fig:
+            ax.plot(X, y, label='CD45')
+
+        D_CD45 = np.mean(y[1:frames_to_include] / (4 * X[1:frames_to_include]))
+
+        X = range(1, len(all_delte_LCK) + 1)
+        X = np.array(X) * 0.001
+        y = np.array(all_delte_LCK)
+
+        if show_fig:
+            plt.xlabel("dT(sec)")
+            plt.ylabel("MSD(nm)")
+            plt.title("MSD/delta T")
+            ax.plot(X, y, label='LCK')
+            ax.legend()
+
+            plt.show()
+
+        D_LCK = np.mean(y[1:frames_to_include] / (4 * X[1:frames_to_include]))
+
+        self.simulation_parameters.D_TCR = D_TCR
+        self.simulation_parameters.D_CD45 = D_CD45
+        self.simulation_parameters.D_LCK = D_LCK
+
+        # result = {"D_TCR": D_TCR, "D_CD45": D_CD45, "D_LCK": D_LCK}
+        # return result
 
     def learn_r(self):
         for couple in ["CD45_LCK", "CD45_TCR", "LCK_TCR"]:
@@ -205,6 +295,10 @@ class UpScaler:
                 for j in range(self.frames[0].shape[0]):
                     f.write(str(int(self.frames[i][j, 2])) + ' ' + str(self.frames[i][j, 0]) + ' ' + str(
                         self.frames[i][j, 1]) + '\n')
+
+
+def distance(x1, y1, x2, y2):
+    return math.dist([x1, y1], [x2, y2])
 
 
 def parse(file_name: str) -> Tuple[np.ndarray, List[np.ndarray]]:
