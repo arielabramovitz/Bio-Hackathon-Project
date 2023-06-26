@@ -26,10 +26,10 @@ class UpScaler:
 
         # self.simulation_parameters = SimulationParameters({}, {})  # TODO: fill using learning (MSD, ...)
         self.simulation_parameters = generator.SimulationParameters(
-            {generator.ParticleType.LCK: 0.1, generator.ParticleType.CD45: 0.2, generator.ParticleType.TCR: 0.3},
-            {(generator.ParticleType.TCR, generator.ParticleType.CD45): (0.1, 0.2, 0.3),
-             (generator.ParticleType.TCR, generator.ParticleType.LCK): (0.4, 0.5, 0.6),
-             (generator.ParticleType.CD45, generator.ParticleType.LCK): (0.7, 0.8, 0.9)})
+            {generator.ParticleType.TCR: 1, generator.ParticleType.CD45: 2, generator.ParticleType.LCK: 3},
+            {(generator.ParticleType.TCR, generator.ParticleType.CD45): (1, 2, 3),
+             (generator.ParticleType.TCR, generator.ParticleType.LCK): (1, 2, 3),
+             (generator.ParticleType.CD45, generator.ParticleType.LCK): (1, 2, 3)})
 
         self.frames = [self.original_frames[0]]
         self.rng = np.random.default_rng()  # TODO: seed?
@@ -50,7 +50,7 @@ class UpScaler:
             # a vector that points from the previous frame to the current frame
             direction_force_vector = self.original_frames[i][:, :2] - self.original_frames[i - 1][:, :2]
 
-            for j in range(self.resolution_factor):
+            for j in range(self.resolution_factor - 1):
 
                 self.frames.append(
                     self.generate_frame(self.frames[-1], direction_force_vector)
@@ -218,8 +218,8 @@ def parse(file_name: str) -> Tuple[np.ndarray, List[np.ndarray]]:
     xyz_file = open(file_name, 'r')
     number_of_frames = int(xyz_file.readline())
     frame_info = xyz_file.readline().split()
-    frame_width = int(frame_info[0])
-    frame_length = int(frame_info[1])
+    frame_width = int(float(frame_info[0]))
+    frame_length = int(float(frame_info[1]))
     number_of_molecules = int(xyz_file.readline())
 
     movie_info = np.array([number_of_frames, frame_width, frame_length, number_of_molecules])  # basic information
