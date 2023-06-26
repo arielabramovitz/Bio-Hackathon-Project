@@ -21,7 +21,7 @@
 }
 
 .SubmitButton {
-  margin: 64px 0px 8px 0px;
+  margin: 64px 0px 16px 0px;
 
 }
 
@@ -34,10 +34,17 @@
 
 .Title{
   margin-top: 32px;
+  margin-bottom: 16px;
 }
+
+
 
 .Graph {
   display: block;
   width: 800px;
   height: 600px;
+}
+
+.FilenName {
+  max-height: 36.5px;
 }

@@ -3,3 +3,4 @@
 /backend/out_file.txt
 /backend/*.txt
 *.html
+/venv
