@@ -25,20 +25,20 @@ class SimulationParameters:
     def __init__(self, d_coefficients: Dict[int, float],
                  interaction_coefficients: Dict[Tuple[int, int], Tuple[float, float, float]]):
         self.D_TCR = d_coefficients[ParticleType.TCR]
-        self.D_DC45 = d_coefficients[ParticleType.CD45]
+        self.D_CD45 = d_coefficients[ParticleType.CD45]
         self.D_LCK = d_coefficients[ParticleType.LCK]
 
-        self.R_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][0]
+        self.R_TCR_CD45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][0]
         self.R_TCR_LCK = interaction_coefficients[(ParticleType.TCR, ParticleType.LCK)][0]
-        self.R_DC45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][0]
+        self.R_CD45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][0]
 
-        self.DREST_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][1]
+        self.DREST_TCR_CD45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][1]
         self.DREST_TCR_LCK = interaction_coefficients[(ParticleType.TCR, ParticleType.LCK)][1]
-        self.DREST_DC45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][1]
+        self.DREST_CD45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][1]
 
-        self.K_TCR_DC45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][2]
+        self.K_TCR_CD45 = interaction_coefficients[(ParticleType.TCR, ParticleType.CD45)][2]
         self.K_TCR_LCK = interaction_coefficients[(ParticleType.TCR, ParticleType.LCK)][2]
-        self.K_DC45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][2]
+        self.K_CD45_LCK = interaction_coefficients[(ParticleType.CD45, ParticleType.LCK)][2]
 
 
 class MovieGenerator:
@@ -115,11 +115,11 @@ class MovieGenerator:
             # calculate the forces from the DC45 particles
             for j in range(self.number_of_particles[0], self.number_of_particles[0] + self.number_of_particles[1]):
                 # calculate the force
-                if self.simulation_parameters.DREST_TCR_DC45 < distances[i, j] < self.simulation_parameters.R_TCR_DC45:
+                if self.simulation_parameters.DREST_TCR_CD45 < distances[i, j] < self.simulation_parameters.R_TCR_CD45:
                     d_vec = last_frame[i, :2] - last_frame[j, :2]
                     force = self.calculate_force(
                         distances[i, j], d_vec,
-                        self.simulation_parameters.DREST_TCR_DC45, self.simulation_parameters.K_TCR_DC45
+                        self.simulation_parameters.DREST_TCR_CD45, self.simulation_parameters.K_TCR_CD45
                     )
                     forces[i, :] += force
                     forces[j, :] -= force
@@ -143,11 +143,11 @@ class MovieGenerator:
             for j in range(self.number_of_particles[0] + self.number_of_particles[1],
                            self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
                 # calculate the force
-                if self.simulation_parameters.DREST_DC45_LCK < distances[i, j] < self.simulation_parameters.R_DC45_LCK:
+                if self.simulation_parameters.DREST_CD45_LCK < distances[i, j] < self.simulation_parameters.R_CD45_LCK:
                     d_vec = last_frame[i, :2] - last_frame[j, :2]
                     force = self.calculate_force(
                         distances[i, j], d_vec,
-                        self.simulation_parameters.DREST_DC45_LCK, self.simulation_parameters.K_DC45_LCK
+                        self.simulation_parameters.DREST_CD45_LCK, self.simulation_parameters.K_CD45_LCK
                     )
                     forces[i, :] += force
                     forces[j, :] -= force
@@ -158,7 +158,7 @@ class MovieGenerator:
         for i in range(self.number_of_particles[0] + self.number_of_particles[1] + self.number_of_particles[2]):
             diffusion = (
                 self.simulation_parameters.D_TCR if i < self.number_of_particles[0]
-                else self.simulation_parameters.D_DC45 if i < self.number_of_particles[0] + self.number_of_particles[1]
+                else self.simulation_parameters.D_CD45 if i < self.number_of_particles[0] + self.number_of_particles[1]
                 else self.simulation_parameters.D_LCK
             )
 
