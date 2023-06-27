@@ -232,7 +232,7 @@ class UpScaler:
         if show_fig:
             ax.plot(X, y, label='TCR')
 
-        frames_to_include = num_of_frames * percent_from_data
+        frames_to_include = int(num_of_frames * percent_from_data)
         D_TCR = np.mean(y[1:frames_to_include] / (4 * X[1:frames_to_include]))
 
         X = range(1, len(all_delte_CD45) + 1)
