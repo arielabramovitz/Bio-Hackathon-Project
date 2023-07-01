@@ -262,7 +262,7 @@ function App() {
 
                 <div className="Title">
                     <Typography variant="h3">
-                        Virtual Telescope
+                        Virtual Microscope
                     </Typography>
                     <Typography variant="h6">
                         A molecular dynamics Upscaler/Visualizer
